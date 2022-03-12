@@ -4,6 +4,7 @@ module Main where
 -- import Lib
 
 import Control.Monad.State.Lazy
+import Control.Monad.Trans.Except
 
 import qualified Data.List as L
 import Text.Read (readMaybe)
@@ -13,7 +14,7 @@ type Mark = Char
 type Board = [[Mark]]
 type Pos = (Int, Int)
 
-type Game a = StateT GameState IO a
+type Game a = ExceptT String (StateT GameState IO) a
 
 data GameState = MkGameState
     { moves :: Int
@@ -90,6 +91,9 @@ printBoard = do
 getCoords :: Game Pos
 getCoords = do
     l <- liftIO $ getLine
+    when (L.isPrefixOf "q" l) $ do
+        liftIO $ putStrLn "Quiting."
+        throwE "User quits."
     let coords :: [Int] = mapMaybe (readMaybe :: String -> Maybe Int) $ take 2 $ words l
     if length coords /= 2
     then do
@@ -140,6 +144,7 @@ boardFilled b = notElem emptyMark $ concat b
 playerTurn :: Game ()
 playerTurn = do
     liftIO $ putStrLn $ "Your turn (" ++ [playerMark] ++ ")."
+    liftIO $ putStrLn "Type q to quit or"
     liftIO $ putStr "Type two space separated integers - row and col indexes: "
     coords <- getValidCoords
     modifyBoard $ placeMark playerMark coords
@@ -248,7 +253,7 @@ game = do
 
 main :: IO ()
 main = do
-    (_, s) <- runStateT game initialState 
+    (_, s) <- runStateT (runExceptT game) initialState 
     let result = resultFromBoard $ board s
     let movesCount = moves s
     putStrLn $ "moves count: " ++ show movesCount
