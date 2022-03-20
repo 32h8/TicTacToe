@@ -4,7 +4,7 @@ module Main where
 -- import Lib
 
 import Control.Monad.State.Lazy
-import Control.Monad.Trans.Except
+import Control.Monad.Except
 
 import qualified Data.List as L
 import Text.Read (readMaybe)
@@ -93,7 +93,7 @@ getCoords = do
     l <- liftIO $ getLine
     when (L.isPrefixOf "q" l) $ do
         liftIO $ putStrLn "Quiting."
-        throwE "User quits."
+        throwError "User quits."
     let coords :: [Int] = mapMaybe (readMaybe :: String -> Maybe Int) $ take 2 $ words l
     if length coords /= 2
     then do
